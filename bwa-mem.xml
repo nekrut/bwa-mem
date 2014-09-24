@@ -1,0 +1,348 @@
+<?xml version="1.0"?>
+<tool id="bwa_mem" name="BWA-MEM" version="bwa-0.7.10-r837-dirty">
+  <requirements>
+    <!--<requirement type="package" version="0.9.6_9608597d12e127c847ae03aa03440ab63992fedf">freebayes</requirement>
+    <requirement type="package" version="0.1.18">samtools</requirement>-->
+  </requirements>
+  <description>- maximum exact match (MEM) module of BWA mapper</description>
+  <command>
+ 
+    #set $reference_fasta_filename = "localref.fa"
+       
+    #if str( $reference_source.reference_source_selector ) == "history":
+    
+        ln -s "${reference_source.ref_file}" "${reference_fasta_filename}" &amp;&amp;
+        
+        ## The following shell commands decide with of the BWA indexing algorithms (IS or BWTSW) will be run
+        ## depending ob the size of the input FASTA dataset
+        
+           (
+            size=`stat -c %s "${reference_fasta_filename}" 2&gt;/dev/null`;                  ## Linux
+            if [ $? -eq 0 ]; 
+            then
+              if [ \$size -lt 2000000000 ]; 
+              then
+                bwa index -a is "${reference_fasta_filename}";
+              else
+                bwa index -a bwtsw "${reference_fasta_filename}";
+              fi;
+            fi;
+
+            eval \$(stat -s "${reference_fasta_filename}");                                  ## OSX
+            if [ $? -eq 0 ];
+            then
+              if [ \$st_size -lt 2000000000 ];
+              then
+                bwa index -a is "${reference_fasta_filename}";
+                echo "Generating BWA index with is algorithm";
+              else
+                bwa index -a bwtsw "${reference_fasta_filename}";
+                echo "Generating BWA index with bwtsw algorithm";
+              fi;
+            fi;
+            ) &amp;&amp;
+             
+    #else:
+        #set $reference_fasta_filename = str( $reference_source.ref_file.fields.path )
+    #end if
+    
+    ## Begin BWA-MEM command line
+    
+    bwa mem
+    -t "\${GALAXY_SLOTS:-1}"
+    -v 1                                                                                      ## Verbosity is set to 1 (errors only)   
+    
+    #if str( $fastq_input.fastq_input_selector ) == "paired_iv":                              ## For interleaved fastq files set -p option
+      -p
+      #if str( $fastq_input.iv_stats.iv_stats_selector ) == "True":                           ## check that insert statistics is used
+        -I "${fastq_input.iv_stats.iset_stats}"
+      #end if
+    #end if
+    
+    #if str( $analysis_type.analysis_type_selector ) == "pacbio":
+      -x
+                                                                                              
+    #elif str( $analysis_type.analysis_type_selector ) == "full":
+    
+      #if str( $analysis_type.algorithmic_options.algorithmic_options_selector ) == "True":    ## Algorithmic options
+      
+        -k "${analysis_type.algorithmic_options.k}"
+        -w "${analysis_type.algorithmic_options.w}"
+        -d "${analysis_type.algorithmic_options.d}"
+        -r "${analysis_type.algorithmic_options.r}"
+        -y "${analysis_type.algorithmic_options.y}"
+        -c "${analysis_type.algorithmic_options.c}"
+        -D "${analysis_type.algorithmic_options.D}"
+        -W "${analysis_type.algorithmic_options.W}"
+        -m "${analysis_type.algorithmic_options.m}"
+        ${analysis_type.algorithmic_options.S}
+        ${analysis_type.algorithmic_options.P}
+        ${analysis_type.algorithmic_options.e}
+      
+      #end if
+    
+      #if str( $analysis_type.scoring_options.scoring_options_selector ) == "True":             ## Scoring options
+    
+        -A "${analysis_type.scoring_options.A}"
+        -B "${analysis_type.scoring_options.B}"
+        -O "${analysis_type.scoring_options.O}"
+        -E "${analysis_type.scoring_options.E}"
+        -L "${analysis_type.scoring_options.L}"
+        -U "${analysis_type.scoring_options.U}"
+    
+      #end if
+    
+      #if str( $analysis_type.io_options.io_options_selector ) == "True":                       ## IO options
+      
+        -T "${analysis_type.io_options.T}"
+        -h "${analysis_type.io_options.h}"
+        ${analysis_type.io_options.a}
+        ${analysis_type.io_options.C}
+        ${analysis_type.io_options.V}
+        ${analysis_type.io_options.Y}
+        ${analysis_type.io_options.M}
+    
+      #end if
+    
+    #elif str( $analysis_type.analysis_type_selector ) == "cline":
+    
+    ${analysis_type.cline}
+    
+    #end if
+    
+    #if str( $rg.rg_selector ) == "True":
+      -R "@RG\tID:$rg.ID\tSM:$rg.SM"
+    #end if 
+    
+    #if str( $fastq_input.fastq_input_selector ) == "paired":
+      
+      #if str( $fastq_input.paired_stats.paired_stats_selector ) == "True":                   ## check that insert statistics is used
+        -I "${fastq_input.paired_stats.iset_stats}"
+      #end if
+      
+      "${reference_fasta_filename}"
+      
+      "${fastq_input.fastq_input1}" "${fastq_input.fastq_input2}"
+      
+    #else:
+    
+      "${reference_fasta_filename}"
+    
+      "${fastq_input.fastq_input1}"
+    
+    #end if
+    
+    | samtools view -Sb - > $bam_output
+      
+  </command>
+  
+  <inputs>
+
+    <conditional name="reference_source">
+      <param name="reference_source_selector" type="select" label="Load reference genome from">
+        <option value="cached">Local cache</option>
+        <option value="history">History</option>
+      </param>
+      <when value="cached">
+        <param name="ref_file" type="select" label="Using reference genome">
+          <options from_data_table="bwa_mem_indexes">
+            <filter type="sort_by" column="2" />
+            <validator type="no_options" message="No indexes are available" />
+          </options>
+          <validator type="no_options" message="A built-in reference genome is not available for the build associated with the selected input file"/>
+        </param>
+      </when>
+      <when value="history"> 
+        <param name="ref_file" type="data" format="fasta" label="Use the folloing dataset as the reference sequence" help="You can upload a FASTA sequence to the history and use it as reference" />
+      </when>
+    </conditional>
+    <conditional name="fastq_input">
+      <param name="fastq_input_selector" type="select" label="Single or Paired-end reads">
+        <option value="paired">Paired</option>
+        <option value="single">Single</option>
+        <option value="paired_iv">Paired Interleaved</option>
+      </param>
+      <when value="paired">
+        <param name="fastq_input1" type="data" format="fastqsanger" label="Select first set of reads" help="Specify dataset with forward reads"/>
+        <param name="fastq_input2" type="data" format="fastqsanger" label="Select second set of reads" help="Specify dataset with reverse reads"/>
+        
+        <!-- PE stat selection block 1: If you make any changes in this conditional block, copy them to PE stat selection block 2 below as well -->
+        
+        <conditional name="paired_stats">
+          <param name="paired_stats_selector" type="boolean" truevalue="set" falsevalue="do_not_set" label="Specify insert size statistics?" help="-I; if you choose to not specify, it will be inferred from the data"/>
+          <when value="set">
+            
+            <param name="iset_stats" type="text" value="250" size="10" label="Enter mean, standerd deviation, max, and min for insert lengths in the form mean,sd,min,max" help="-I; only mean is required while sd, max, and min will be inferred. Examples: both &quot;250&quot; and &quot;250,25&quot; will work while &quot;250,,10&quot; will not. See below for details.">
+              <sanitizer invalid_char="">
+                <valid initial="string.digits"><add value=","/> </valid>
+              </sanitizer>
+            </param>
+            
+          </when>
+          <when value="do_not_set">
+          <!-- do nothing -->
+          </when>
+        </conditional>
+        
+        <!-- end of PE stat selection block 1 -->
+        
+      </when>     
+      <when value="single">
+        <param name="fastq_input1" type="data" format="fastqsanger" label="Select fastq dataset" help="Specify dataset with single reads"/>
+      </when>
+      <when value="paired_iv">
+        <param name="fastq_input1" type="data" format="fastqsanger" label="Select fastq dataset" help="Specify dataset with interleaved reads"/>
+        
+        <!-- PE stat selection block 2: If you make any changes in this conditional block, copy them to PE stat selection block 1 above as well -->
+        
+        <conditional name="iv_stats">
+          <param name="iv_stats_selector" type="boolean" truevalue="set" falsevalue="do_not_set" label="Specify insert size statistics?" help="-I; if you choose to not specify, it will be inferred from the data"/>
+          <when value="set">
+            
+            <param name="iset_stats" type="text" value="250" size="10" label="Enter mean, standerd deviation, max, and min for insert lengths in the form mean,sd,min,max" help="-I; only mean is required while sd, max, and min will be inferred. Examples: both &quot;250&quot; and &quot;250,25&quot; will work while &quot;250,,10&quot; will not. See below for details.">
+              <sanitizer invalid_char="">
+                <valid initial="string.digits"><add value=","/> </valid>
+              </sanitizer>
+            </param>
+          
+          </when>
+          <when value="do_not_set">
+          <!-- do nothing -->
+          </when>
+        </conditional>
+        
+        <!-- end of PE stat selection block 2 -->
+        
+      </when>
+    </conditional>
+    
+    <conditional name="rg">
+      <param name="rg_selector" type="boolean" truevalue="set" falsevalue="do_not_set" label="Specify readgroup information?" help="Specifying readgroup information can greatly simplify your downstream analyses by allowing combining multiple datasets. See help below for more details"/>
+      <when value="set">
+        <param name="ID" type="text" value="readgroup1" size="20" label="Specify readgroup ID" help="This value must be unique among multiple samples in your experiment">
+          <sanitizer invalid_char="">
+            <valid initial="string.printable"/>
+          </sanitizer>
+        </param>
+        <param name="SM" type="text" value="blood" size="20" label="Specify readgroup sample name (SM)" help="This value should be descriptive">
+          <sanitizer invalid_char="">
+            <valid initial="string.printable"/>
+          </sanitizer>
+        </param>
+      </when>
+      <when value="do_not_set">
+        <!-- do nothing -->
+      </when>
+    </conditional>
+      
+    <conditional name="analysis_type">
+      <param name="analysis_type_selector" type="select" label="Select analysis mode">
+        <option value="illumina">Simple Illumina mode</option>
+        <option value="pacbio">PacBio mode</option>
+        <option value="full">Full list of options</option>
+        <option value="cline">Input parameters on the command line</option>
+      </param>
+      <when value="illumina">
+        <!-- do nothing -->
+      </when>
+      <when value="pacbio">
+        <!-- do nothing. all magic happens within <command> tag -->
+      </when>
+      <when value="full">
+        <conditional name="algorithmic_options">
+          <param name="algorithmic_options_selector" type="boolean" truevalue="set" falsevalue="do_not_set" label="Set algorithmic options?" help="Sets -k, -w, -d, -r, -y, -c, -D, -W, -m, -S, -P, and -e options." />
+          <when value="set">
+            <param name="k" type="integer" value="19" label="minimum seed length" help="-k; default=19"/>
+            <param name="w" type="integer" value="100" label="band width for banded alignment" help="-w; default=100"/>
+            <param name="d" type="integer" value="100" label="off-diagonal X-dropoff" help="-d; default=100"/>
+            <param name="r" type="float" value="1.5" label="look for internal seeds inside a seed longer than -k * THIS VALUE" help="-r; default=1.5"/>
+            <param name="y" type="integer" value="0" label="find maximum exact matches (MEMs) longer than -k * -r with size less than THIS VALUE" help="-y;  default=0"/>
+            <param name="c" type="integer" value="500" label="skip seeds with more than that many occurrences" help="-c; default=500"/>
+            <param name="D" type="float" value="0.5" label="drop chains shorter than this fraction of the longest overlapping chain" help="-D; default=0.5"/>
+            <param name="W" type="integer" value="0" label="discard a chain if seeded bases shorter than" help="-W; default=0"/>
+            <param name="m" type="integer" value="50" label="perform at most this many rounds of mate rescues for each read" help="-m; default=50"/>
+            <param name="S" type="boolean" truevalue="-S" falsevalue="" label="skip mate rescue" help="-S"/>
+            <param name="P" type="boolean" truevalue="-P" falsevalue="" label="skip pairing; mate rescue performed unless -S also in use" help="-P"/>
+            <param name="e" type="boolean" truevalue="-e" falsevalue="" label="discard full-length exact matches" help="-e"/>
+          </when>
+          <when value="do_not_set">
+            <!-- do nothing -->
+          </when>
+        </conditional>
+        <conditional name="scoring_options">
+          <param name="scoring_options_selector" type="boolean" truevalue="set" falsevalue="do_not_set" label="Set scoring options?" help="Sets -A, -B, -O, -E, -L, and -U options." />
+          <when value="set">
+            <param name="A" type="integer" value="1" label="score for a sequence match" help="-A; scales options -T, -d, -B, -O, -E, -L, and -U; default=1"/>
+            <param name="B" type="integer" value="4" label="penalty for mismatch" help="-B; default=4"/>
+            <param name="O" type="text" value="6,6" label="gap open penalty for deletions and insertions" help="-O; default=6,6">
+              <sanitizer invalid_char="">
+                <valid initial="string.digits"><add value=","/> </valid>
+              </sanitizer>
+            </param>
+            <param name="E" type="text" value="1,1" label="gap extension penalty; a gap of size k cost &#39;-O + -E*k&#39; " help="-E; default=1,1">
+              <sanitizer invalid_char="">
+                <valid initial="string.digits"><add value=","/> </valid>
+              </sanitizer>
+            </param>
+            <param name="L" type="text" value="5,5" label="penalty for 5&#39;-end and 3&#39;-end clipping" help="-L; default=5,5">
+              <sanitizer invalid_char="">
+                <valid initial="string.digits"><add value=","/> </valid>
+              </sanitizer>
+            </param>
+            <param name="U" type="integer" value="17" label="penalty for an unpaired read pair" help="-U; default=17"/>
+          </when>
+          <when value="do_not_set">
+            <!-- do nothing -->
+          </when>
+        </conditional>
+        <conditional name="io_options">
+          <param name="io_options_selector" type="boolean" truevalue="set" falsevalue="do_not_set" label="Set input/output options" help="Sets -T, -h, -a, -C, -V, -Y, and -M options." />
+          <when value="set">
+            <param name="T" type="integer" value="30" label="minimum score to output" help="-T; default=30"/>
+            <param name="h" type="integer" value="5" label="if there are this many hits with score >80% of the max score, output all in XA tag" help="-h; default=5"/>
+            <param name="a" type="boolean" truevalue="-a" falsevalue="" label="output all alignments for single-ends or unpaired paired-ends" help="-a"/>
+            <param name="C" type="boolean" truevalue="-C" falsevalue="" label="append FASTA/FASTQ comment to BAM output" help="-C"/>
+            <param name="V" type="boolean" truevalue="-V" falsevalue="" label="output the reference FASTA header in the XR tag" help="-C"/>
+            <param name="Y" type="boolean" truevalue="-Y" falsevalue="" label="use soft clipping for supplementary alignments" help="-Y"/>
+            <param name="M" type="boolean" truevalue="-M" falsevalue="" label="mark shorter split hits as secondary" help="-M"/>
+          </when>
+          <when value="do_not_set">
+            <!-- do nothing -->
+          </when>
+        </conditional>
+      </when>
+      <when value="cline">
+        <param name="cline" size="60" type="text" value="-T 30 -c 250" label="Type command line options here" help="All paremeters that DO NOT involve filenames can be typed here.">
+          <sanitizer>
+            <valid initial="string.printable">
+              <remove value="&apos;"/>
+            </valid>
+          </sanitizer>
+        </param>
+      </when>
+    </conditional>
+  </inputs>
+  
+  <outputs>
+    <data format="bam" name="bam_output" />
+  </outputs>
+  
+  <tests>
+    <test>
+      <param name="reference_source_selector" value="history" />
+      <param name="ref_file" ftype="fasta" value="bwa-mem-mt-genome.fa"/>
+      <param name="fastq_input_selector" value="paired"/>
+      <param name="fastq_input1" ftype="fastqsanger" value="bwa-mem-fastq1.fq"/>
+      <param name="fastq_input2" ftype="fastqsanger" value="bwa-mem-fastq2.fq"/>
+      <param name="analysis_type_selector" value="illumina"/>
+      <output name="bam_output" ftype="bam" file="bwa-mem-test1.bam" lines_diff="2" />
+    </test>
+  </tests>
+  <stdio>
+    <exit_code range="1:" />
+  </stdio>
+  <help>
+
+
+  </help>
+</tool>
