@@ -448,4 +448,15 @@ To obtain more information about BWA MEM and ask questions use these resources:
   
     
   </help>
+  <citations>
+    <citation type="doi">10.1093/bioinformatics/btp324</citation>
+    <citation type="doi">10.1093/bioinformatics/btp698</citation>
+    <citation type="bibtex">@misc{1303.3997,
+Author = {Heng Li},
+Title = {Aligning sequence reads, clone sequences and assembly contigs with BWA-MEM},
+Year = {2013},
+Eprint = {arXiv:1303.3997},
+url = {http://arxiv.org/abs/1303.3997},
+}</citation>
+  </citations>
 </tool>
