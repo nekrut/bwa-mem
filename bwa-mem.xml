@@ -23,8 +23,10 @@
               if [ \$size -lt 2000000000 ]; 
               then
                 bwa index -a is "${reference_fasta_filename}";
+                echo "Generating BWA index with is algorithm";
               else
                 bwa index -a bwtsw "${reference_fasta_filename}";
+                echo "Generating BWA index with bwtsw algorithm";
               fi;
             fi;
 
@@ -324,7 +326,7 @@
   </inputs>
   
   <outputs>
-    <data format="bam" name="bam_output" />
+    <data format="bam" name="bam_output" label="${tool.name} on ${on_string} (mapped reads)"/>
   </outputs>
   
   <tests>
