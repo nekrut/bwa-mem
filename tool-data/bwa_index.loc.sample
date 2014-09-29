@@ -1,164 +1,38 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-US">
-<head>
-<link rel="icon" href="/repos/devteam/bwa_wrappers/static/hgicon.png" type="image/png" />
-<meta name="robots" content="index, nofollow" />
-<link rel="stylesheet" href="/repos/devteam/bwa_wrappers/static/style-paper.css" type="text/css" />
-<script type="text/javascript" src="/repos/devteam/bwa_wrappers/static/mercurial.js"></script>
-
-<title>bwa_wrappers: b4427dbb6ced tool-data/bwa_index.loc.sample</title>
-</head>
-<body>
-
-<div class="container">
-<div class="menu">
-<div class="logo">
-<a href="http://mercurial.selenic.com/">
-<img src="/repos/devteam/bwa_wrappers/static/hglogo.png" alt="mercurial" /></a>
-</div>
-<ul>
-<li><a href="/repos/devteam/bwa_wrappers/shortlog/b4427dbb6ced">log</a></li>
-<li><a href="/repos/devteam/bwa_wrappers/graph/b4427dbb6ced">graph</a></li>
-<li><a href="/repos/devteam/bwa_wrappers/tags">tags</a></li>
-<li><a href="/repos/devteam/bwa_wrappers/branches">branches</a></li>
-</ul>
-<ul>
-<li><a href="/repos/devteam/bwa_wrappers/rev/b4427dbb6ced">changeset</a></li>
-<li><a href="/repos/devteam/bwa_wrappers/file/b4427dbb6ced/tool-data/">browse</a></li>
-</ul>
-<ul>
-<li class="active">file</li>
-<li><a href="/repos/devteam/bwa_wrappers/file/tip/tool-data/bwa_index.loc.sample">latest</a></li>
-<li><a href="/repos/devteam/bwa_wrappers/diff/b4427dbb6ced/tool-data/bwa_index.loc.sample">diff</a></li>
-<li><a href="/repos/devteam/bwa_wrappers/annotate/b4427dbb6ced/tool-data/bwa_index.loc.sample">annotate</a></li>
-<li><a href="/repos/devteam/bwa_wrappers/log/b4427dbb6ced/tool-data/bwa_index.loc.sample">file log</a></li>
-<li><a href="/repos/devteam/bwa_wrappers/raw-file/b4427dbb6ced/tool-data/bwa_index.loc.sample">raw</a></li>
-</ul>
-<ul>
-<li><a href="/repos/devteam/bwa_wrappers/help">help</a></li>
-</ul>
-</div>
-
-<div class="main">
-<h2><a href="/repos/devteam/bwa_wrappers/">bwa_wrappers</a></h2>
-<h3>view tool-data/bwa_index.loc.sample @ 3:b4427dbb6ced</h3>
-
-<form class="search" action="/repos/devteam/bwa_wrappers/log">
-
-<p><input name="rev" id="search1" type="text" size="30" /></p>
-<div id="hint">find changesets by author, revision,
-files, or words in the commit message</div>
-</form>
-
-<div class="description">Convert tool to use $GALAXY_SLOTS if available.</div>
-
-<table id="changesetEntry">
-<tr>
- <th class="author">author</th>
- <td class="author">&#78;&#97;&#116;&#101;&#32;&#67;&#111;&#114;&#97;&#111;&#114;&#32;&#60;&#110;&#97;&#116;&#101;&#64;&#98;&#120;&#46;&#112;&#115;&#117;&#46;&#101;&#100;&#117;&#62;</td>
-</tr>
-<tr>
- <th class="date">date</th>
- <td class="date age">Thu, 16 Jan 2014 13:11:51 -0500</td>
-</tr>
-<tr>
- <th class="author">parents</th>
- <td class="author"></td>
-</tr>
-<tr>
- <th class="author">children</th>
- <td class="author"></td>
-</tr>
-
-</table>
-
-<div class="overflow">
-<div class="sourcefirst"> line source</div>
-
-<div class="parity0 source"><a href="#l1" id="l1">     1</a> #This is a sample file distributed with Galaxy that enables tools
-</div>
-<div class="parity1 source"><a href="#l2" id="l2">     2</a> #to use a directory of BWA indexed sequences data files. You will need
-</div>
-<div class="parity0 source"><a href="#l3" id="l3">     3</a> #to create these data files and then create a bwa_index.loc file
-</div>
-<div class="parity1 source"><a href="#l4" id="l4">     4</a> #similar to this one (store it in this directory) that points to
-</div>
-<div class="parity0 source"><a href="#l5" id="l5">     5</a> #the directories in which those files are stored. The bwa_index.loc
-</div>
-<div class="parity1 source"><a href="#l6" id="l6">     6</a> #file has this format (longer white space characters are TAB characters):
-</div>
-<div class="parity0 source"><a href="#l7" id="l7">     7</a> #
-</div>
-<div class="parity1 source"><a href="#l8" id="l8">     8</a> #&lt;unique_build_id&gt;   &lt;dbkey&gt;   &lt;display_name&gt;   &lt;file_path&gt;
-</div>
-<div class="parity0 source"><a href="#l9" id="l9">     9</a> #
-</div>
-<div class="parity1 source"><a href="#l10" id="l10">    10</a> #So, for example, if you had phiX indexed stored in 
-</div>
-<div class="parity0 source"><a href="#l11" id="l11">    11</a> #/depot/data2/galaxy/phiX/base/, 
-</div>
-<div class="parity1 source"><a href="#l12" id="l12">    12</a> #then the bwa_index.loc entry would look like this:
-</div>
-<div class="parity0 source"><a href="#l13" id="l13">    13</a> #
-</div>
-<div class="parity1 source"><a href="#l14" id="l14">    14</a> #phiX174   phiX   phiX Pretty   /depot/data2/galaxy/phiX/base/phiX.fa
-</div>
-<div class="parity0 source"><a href="#l15" id="l15">    15</a> #
-</div>
-<div class="parity1 source"><a href="#l16" id="l16">    16</a> #and your /depot/data2/galaxy/phiX/base/ directory
-</div>
-<div class="parity0 source"><a href="#l17" id="l17">    17</a> #would contain phiX.fa.* files:
-</div>
-<div class="parity1 source"><a href="#l18" id="l18">    18</a> #
-</div>
-<div class="parity0 source"><a href="#l19" id="l19">    19</a> #-rw-r--r--  1 james    universe 830134 2005-09-13 10:12 phiX.fa.amb
-</div>
-<div class="parity1 source"><a href="#l20" id="l20">    20</a> #-rw-r--r--  1 james    universe 527388 2005-09-13 10:12 phiX.fa.ann
-</div>
-<div class="parity0 source"><a href="#l21" id="l21">    21</a> #-rw-r--r--  1 james    universe 269808 2005-09-13 10:12 phiX.fa.bwt
-</div>
-<div class="parity1 source"><a href="#l22" id="l22">    22</a> #...etc...
-</div>
-<div class="parity0 source"><a href="#l23" id="l23">    23</a> #
-</div>
-<div class="parity1 source"><a href="#l24" id="l24">    24</a> #Your bwa_index.loc file should include an entry per line for each
-</div>
-<div class="parity0 source"><a href="#l25" id="l25">    25</a> #index set you have stored. The &quot;file&quot; in the path does not actually
-</div>
-<div class="parity1 source"><a href="#l26" id="l26">    26</a> #exist, but it is the prefix for the actual index files.  For example:
-</div>
-<div class="parity0 source"><a href="#l27" id="l27">    27</a> #
-</div>
-<div class="parity1 source"><a href="#l28" id="l28">    28</a> #phiX174				phiX	phiX174			/depot/data2/galaxy/phiX/base/phiX.fa
-</div>
-<div class="parity0 source"><a href="#l29" id="l29">    29</a> #hg18canon				hg18	hg18 Canonical	/depot/data2/galaxy/hg18/base/hg18canon.fa
-</div>
-<div class="parity1 source"><a href="#l30" id="l30">    30</a> #hg18full				hg18	hg18 Full		/depot/data2/galaxy/hg18/base/hg18full.fa
-</div>
-<div class="parity0 source"><a href="#l31" id="l31">    31</a> #/orig/path/hg19.fa		hg19	hg19			/depot/data2/galaxy/hg19/base/hg19.fa
-</div>
-<div class="parity1 source"><a href="#l32" id="l32">    32</a> #...etc...
-</div>
-<div class="parity0 source"><a href="#l33" id="l33">    33</a> #
-</div>
-<div class="parity1 source"><a href="#l34" id="l34">    34</a> #Note that for backwards compatibility with workflows, the unique ID of
-</div>
-<div class="parity0 source"><a href="#l35" id="l35">    35</a> #an entry must be the path that was in the original loc file, because that
-</div>
-<div class="parity1 source"><a href="#l36" id="l36">    36</a> #is the value stored in the workflow for that parameter. That is why the
-</div>
-<div class="parity0 source"><a href="#l37" id="l37">    37</a> #hg19 entry above looks odd. New genomes can be better-looking.
-</div>
-<div class="parity1 source"><a href="#l38" id="l38">    38</a> #
-</div>
-<div class="sourcelast"></div>
-</div>
-</div>
-</div>
-
-<script type="text/javascript">process_dates()</script>
-
-
-</body>
-</html>
-
+#This is a sample file distributed with Galaxy that enables tools
+#to use a directory of BWA indexed sequences data files. You will need
+#to create these data files and then create a bwa_index.loc file
+#similar to this one (store it in this directory) that points to
+#the directories in which those files are stored. The bwa_index.loc
+#file has this format (longer white space characters are TAB characters):
+#
+#<unique_build_id>   <dbkey>   <display_name>   <file_path>
+#
+#So, for example, if you had phiX indexed stored in 
+#/depot/data2/galaxy/phiX/base/, 
+#then the bwa_index.loc entry would look like this:
+#
+#phiX174   phiX   phiX Pretty   /depot/data2/galaxy/phiX/base/phiX.fa
+#
+#and your /depot/data2/galaxy/phiX/base/ directory
+#would contain phiX.fa.* files:
+#
+#-rw-r--r--  1 james    universe 830134 2005-09-13 10:12 phiX.fa.amb
+#-rw-r--r--  1 james    universe 527388 2005-09-13 10:12 phiX.fa.ann
+#-rw-r--r--  1 james    universe 269808 2005-09-13 10:12 phiX.fa.bwt
+#...etc...
+#
+#Your bwa_index.loc file should include an entry per line for each
+#index set you have stored. The "file" in the path does not actually
+#exist, but it is the prefix for the actual index files.  For example:
+#
+#phiX174				phiX	phiX174			/depot/data2/galaxy/phiX/base/phiX.fa
+#hg18canon				hg18	hg18 Canonical	/depot/data2/galaxy/hg18/base/hg18canon.fa
+#hg18full				hg18	hg18 Full		/depot/data2/galaxy/hg18/base/hg18full.fa
+#/orig/path/hg19.fa		hg19	hg19			/depot/data2/galaxy/hg19/base/hg19.fa
+#...etc...
+#
+#Note that for backwards compatibility with workflows, the unique ID of
+#an entry must be the path that was in the original loc file, because that
+#is the value stored in the workflow for that parameter. That is why the
+#hg19 entry above looks odd. New genomes can be better-looking.
+#
