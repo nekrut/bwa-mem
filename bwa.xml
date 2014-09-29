@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
-<tool id="bwa" name="BWA" version="bwa-0.7.10-r837-dirty">
+<tool id="bwa_aln_0_7_10" name="BWA" version="bwa-0.7.10-r837-dirty_galaxy_0.1">
   <requirements>
-    <!--<requirement type="package" version="0.9.6_9608597d12e127c847ae03aa03440ab63992fedf">freebayes</requirement>
-    <requirement type="package" version="0.1.18">samtools</requirement>-->
+    <requirement type="package" version="0.7.10.039ea20639">bwa</requirement>
+    <requirement type="package" version="1.1">samtools</requirement>
   </requirements>
-  <description>- maximum exact match (MEM) module of BWA mapper</description>
+  <description>- map short reads (&lt; 100 bp) against referece genome</description>
   <command>
  
     #set $reference_fasta_filename = "localref.fa"
@@ -148,10 +148,35 @@
       @read_group_options@
       
       "${reference_fasta_filename}" first.sai second.sai "${input_type.bam_input}" "${input_type.bam_input}"
+    
+####### Fastq single   ------------ to do next
+
+    #elif str( $input_type.input_type_selector ) == "single_bam":
+      
+      bwa aln
+      -t "\${GALAXY_SLOTS:-1}"
+      -b
+      -0
+      
+      @command_options@
+      
+      "${reference_fasta_filename}"
+      "${input_type.bam_input}"
+      > first.sai &amp;&amp;
+      
+      bwa samse
+      
+      #if str( $input_type.adv_bam_se_options.adv_se_options_selector) == "True":
+    
+        -n ${$input_type.adv_bam_se_options.n}    
+      
+      #end if
+      
+      @read_group_options@
+      
+      "${reference_fasta_filename}" first.sai "${input_type.bam_input}"
       
     #end if
-    
-####### BAM single   ------------ to do next
     
     | samtools view -Sb - > $bam_output
       
@@ -232,7 +257,7 @@
         <option value="history">History</option>
       </param>
       <when value="cached">
-        <param name="ref_file" type="select" label="Using reference genome">
+        <param name="ref_file" type="select" label="Using reference genome" help="Select genome from the list">
           <options from_data_table="bwa_mem_indexes">
             <filter type="sort_by" column="2" />
             <validator type="no_options" message="No indexes are available" />
@@ -245,7 +270,7 @@
       </when>
     </conditional>
     <conditional name="input_type">
-      <param name="input_type_selector" type="select" label="Select input type">
+      <param name="input_type_selector" type="select" label="Select input type" help="Select between fastq and bam datasets and between paired and single end data">
         <option value="paired">Paired fastq</option>
         <option value="single">Single fastq</option>
         <option value="paired_bam">Paired BAM</option>
@@ -272,7 +297,7 @@
       <!-- the difference between single and paired bams is in the <command> tag portion and realated to -0, -1, and -2 options -->
       
       <when value="paired_bam">
-        <param name="bam_input" type="data" format="bam" label="Select BAM dataset" help="Specify BAM dataset with reads"/>
+        <param name="bam_input" type="data" format="bam" label="Select BAM dataset" help="Specify BAM dataset with paired reads"/>
         <conditional name="adv_bam_pe_options">
           
           <expand macro="advanced_pe_options" />
@@ -280,7 +305,7 @@
         </conditional>
       </when>
       <when value="single_bam">
-        <param name="bam_input" type="data" format="bam" label="Select BAM dataset" help="Specify BAM dataset with reads"/>
+        <param name="bam_input" type="data" format="bam" label="Select BAM dataset" help="Specify BAM dataset with single reads"/>
         <conditional name="adv_bam_se_options">
           
           <expand macro="advances_se_options" />
@@ -349,18 +374,26 @@
   </inputs>
   
   <outputs>
-    <data format="bam" name="bam_output" />
+    <data format="bam" name="bam_output" label="${tool.name} on ${on_string} (mapped reads in BAM format)"/>
   </outputs>
   
   <tests>
     <test>
       <param name="reference_source_selector" value="history" />
       <param name="ref_file" ftype="fasta" value="bwa-mem-mt-genome.fa"/>
-      <param name="fastq_input_selector" value="paired"/>
+      <param name="input_type_selector" value="paired"/>
       <param name="fastq_input1" ftype="fastqsanger" value="bwa-mem-fastq1.fq"/>
       <param name="fastq_input2" ftype="fastqsanger" value="bwa-mem-fastq2.fq"/>
       <param name="analysis_type_selector" value="illumina"/>
-      <output name="bam_output" ftype="bam" file="bwa-mem-test1.bam" lines_diff="2" />
+      <output name="bam_output" ftype="bam" file="bwa-aln-test1.bam" lines_diff="2" />
+    </test>
+    <test>
+      <param name="reference_source_selector" value="history" />
+      <param name="ref_file" ftype="fasta" value="bwa-mem-mt-genome.fa"/>
+      <param name="input_type_selector" value="paired_bam"/>
+      <param name="bam_input" ftype="bam" value="bwa-aln-bam-input.bam"/>
+      <param name="analysis_type_selector" value="illumina"/>
+      <output name="bam_output" ftype="bam" file="bwa-aln-test2.bam" lines_diff="2" />
     </test>
   </tests>
   <stdio>
@@ -370,13 +403,15 @@
     
 **What is does**
 
-This is Galaxy wrapper for bwa aln, sampe, and samse modules of bwa read mapping tool. Galaxy implementation takes fastq files as input and produces output in BAM (not SAM) format, which can be further processed using various BAM utilities exiting in Galaxy (BAMTools, SAMTools, Picard).
+BWA is a software package for mapping low-divergent sequences against a large reference genome, such as the human genome. The bwa-aln algorithm is designed for Illumina sequence reads up to 100bp. For longer reads use BWA-MEM algorithm distributed as separate Galaxy tool.
 
-------
+This Galaxy tool wraps bwa-aln, bwa-samse and -sampe modules of bwa read mapping tool:
 
-**Description**
-
-
+  - bwa aln - actual mapper placing reads onto the reference sequence
+  - bwa samse - post-processor converting suffix array coordinates into genome coordinates in SAM format for single reads
+  - bam sampe - post-processor for paired reads
+  
+Galaxy implementation takes fastq or BAM (unaligned BAM) datasets as input and produces output in BAM (not SAM; in reality SAM produced by the bwa is converted to BAM on the fly by samtools view command) format, which can be further processed using various BAM utilities exiting in Galaxy (BAMTools, SAMTools, Picard).
 
 -----
 
@@ -390,12 +425,46 @@ Galaxy allows three levels of control over bwa-mem options provided by **Select 
   
 ------
 
-**BWA options**
+**bwa-aln options**
 
-Each Galaxy parameter widget corresponding to command line flags listed below:
+Each Galaxy parameter widget corresponds to command line flags listed below::
 
+    -n NUM    max #diff (int) or missing prob under 0.02 err rate (float) [0.04]
+    -o INT    maximum number or fraction of gap opens [1]
+    -e INT    maximum number of gap extensions, -1 for disabling long gaps [-1]
+    -i INT    do not put an indel within INT bp towards the ends [5]
+    -d INT    maximum occurrences for extending a long deletion [10]
+    -l INT    seed length [32]
+    -k INT    maximum differences in the seed [2]
+    -m INT    maximum entries in the queue [2000000]
+    -M INT    mismatch penalty [3]
+    -O INT    gap open penalty [11]
+    -E INT    gap extension penalty [4]
+    -R INT    stop searching when there are >INT equally best hits [30]
+    -q INT    quality threshold for read trimming down to 35bp [0]
+    -B INT    length of barcode
+    -L        log-scaled gap penalty for long deletions
+    -N        non-iterative mode: search for all n-difference hits (slooow)
+    -I        the input is in the Illumina 1.3+ FASTQ-like format
+    -b        the input read file is in the BAM format
+    -0        use single-end reads only (effective with -b)
+    -1        use the 1st read in a pair (effective with -b)
+    -2        use the 2nd read in a pair (effective with -b)
 
-                     
+**bwa-samse options**::
+
+    -a INT    maximum insert size [500]
+    -o INT    maximum occurrences for one end [100000]
+    -n INT    maximum hits to output for paired reads [3]
+    -N INT    maximum hits to output for discordant pairs [10]
+    -c FLOAT  prior of chimeric rate (lower bound) [1.0e-05]
+    -r STR    read group header line [null]
+
+**bwa-sampe options**::
+
+    -n INT    maximum hits to output for paired reads [3]
+    -r STR    read group header line [null]
+                 
 ------
 
 .. class:: warningmark

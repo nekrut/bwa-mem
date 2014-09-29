@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
-<tool id="bwa_mem" name="BWA-MEM" version="bwa-0.7.10-r837-dirty">
+<tool id="bwa_mem_0_7_10" name="BWA-MEM" version="bwa-0.7.10-r837-dirty_galaxy_0.1">
   <requirements>
-    <!--<requirement type="package" version="0.9.6_9608597d12e127c847ae03aa03440ab63992fedf">freebayes</requirement>
-    <requirement type="package" version="0.1.18">samtools</requirement>-->
+    <requirement type="package" version="0.7.10.039ea20639">bwa</requirement>
+    <requirement type="package" version="1.1">samtools</requirement>
   </requirements>
-  <description>- maximum exact match (MEM) module of BWA mapper</description>
+  <description>- map medium and long reads (&gt; 100 bp) against reference genome</description>
   <command>
  
     #set $reference_fasta_filename = "localref.fa"
@@ -146,7 +146,7 @@
         <option value="history">History</option>
       </param>
       <when value="cached">
-        <param name="ref_file" type="select" label="Using reference genome">
+        <param name="ref_file" type="select" label="Using reference genome" help="Select genome from the list">
           <options from_data_table="bwa_mem_indexes">
             <filter type="sort_by" column="2" />
             <validator type="no_options" message="No indexes are available" />
@@ -159,7 +159,7 @@
       </when>
     </conditional>
     <conditional name="fastq_input">
-      <param name="fastq_input_selector" type="select" label="Single or Paired-end reads">
+      <param name="fastq_input_selector" type="select" label="Single or Paired-end reads" help="Select between paired and single end data">
         <option value="paired">Paired</option>
         <option value="single">Single</option>
         <option value="paired_iv">Paired Interleaved</option>
@@ -326,7 +326,7 @@
   </inputs>
   
   <outputs>
-    <data format="bam" name="bam_output" label="${tool.name} on ${on_string} (mapped reads)"/>
+    <data format="bam" name="bam_output" label="${tool.name} on ${on_string} (mapped reads in BAM format)"/>
   </outputs>
   
   <tests>
@@ -347,12 +347,6 @@
     
 **What is does**
 
-This is Galaxy wrapper for bwa-mem module of bwa read mapping tool. Galaxy implementation takes fastq files as input and produces output in BAM (not SAM) format, which can be further processed using various BAM utilities exiting in Galaxy (BAMTools, SAMTools, Picard).
-
-------
-
-**Description**
-
 From http://arxiv.org/abs/1303.3997:
 
 BWA-MEM is a new alignment algorithm for aligning sequence reads or long query sequences against a large reference genome such as human.
@@ -361,6 +355,8 @@ The algorithm is robust to sequencing errors and applicable to a wide range of s
 For mapping 100bp sequences, BWA-MEM shows better performance than several state-of-art read aligners to date.
 
 It is best suited for mapping long (>70 nt) reads against large reference genomes.
+
+This Galaxy tool wraps bwa-mem module of bwa read mapping tool. Galaxy implementation takes fastq files as input and produces output in BAM (not SAM) format, which can be further processed using various BAM utilities exiting in Galaxy (BAMTools, SAMTools, Picard).
 
 -----
 
@@ -377,7 +373,7 @@ Galaxy allows four levels of control over bwa-mem options provided by **Select a
 
 **BWA MEM options**
 
-Each Galaxy parameter widget corresponding to command line flags listed below:
+Each Galaxy parameter widget corresponds to command line flags listed below:
 
 Algorithm options::
 
