@@ -178,7 +178,10 @@
       
     #end if
     
-    | samtools view -Sb - > $bam_output
+    | samtools view -Sb - > temporary_bam_file.bam &amp;&amp;
+    
+    samtools sort -f temporary_bam_file.bam ${bam_output}
+    
       
   </command>
   
