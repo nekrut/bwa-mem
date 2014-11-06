@@ -1,5 +1,6 @@
 <?xml version="1.0"?>
-<tool id="bwa_aln_0_7_10" name="BWA" version="bwa-0.7.10-r837-dirty_galaxy_0.1">
+<tool id="bwa_aln_0_7_10" name="BWA" version="bwa-0.7.10-r837-dirty_galaxy_0.2">
+  
   <requirements>
     <requirement type="package" version="0.7.10.039ea20639">bwa</requirement>
     <requirement type="package" version="1.1">samtools</requirement>
@@ -50,7 +51,7 @@
     
 ####### Fastq paired
     
-    #if str( $input_type.input_type_selector ) == "paired":
+    #if str( $input_type.input_type_selector ) == "paired" or str( $input_type.input_type_selector ) == "paired_collection":
       
       bwa aln
       -t "\${GALAXY_SLOTS:-1}"
@@ -58,7 +59,13 @@
       @command_options@
       
       "${reference_fasta_filename}"
-      "${input_type.fastq_input1}"
+      
+      #if str( $input_type.input_type_selector ) == "paired_collection":
+        "${input_type.fastq_input1.forward}"
+      #else
+        "${input_type.fastq_input1}"
+      #end if
+      
       > first.sai &amp;&amp;
       
       bwa aln
@@ -67,7 +74,13 @@
       @command_options@
       
       "${reference_fasta_filename}"
-      "${input_type.fastq_input2}"
+      
+      #if str( $input_type.input_type_selector ) == "paired_collection":
+        "${input_type.fastq_input1.reverse}"
+      #else
+        "${input_type.fastq_input2}"
+      #end if
+
       > second.sai &amp;&amp;
    
       bwa sampe
@@ -83,7 +96,15 @@
       
       @read_group_options@
       
-      "${reference_fasta_filename}" first.sai second.sai "${input_type.fastq_input1}" "${input_type.fastq_input2}"
+      #if str( $input_type.input_type_selector ) == "paired_collection":
+      
+        "${reference_fasta_filename}" first.sai second.sai "${input_type.fastq_input1.forward}" "${input_type.fastq_input1.reverse}"
+      
+      #else:
+      
+        "${reference_fasta_filename}" first.sai second.sai "${input_type.fastq_input1}" "${input_type.fastq_input2}"
+      
+      #end if
       
 ####### Fastq single
  
@@ -186,6 +207,7 @@
   </command>
   
   <macros>
+    <import>bwa_macros.xml</import>
     <token name="@command_options@">        
     #if str( $analysis_type.analysis_type_selector ) == "illumina":
      
@@ -229,7 +251,10 @@
     </token>
       
     <xml name="advanced_pe_options">
-      <param name="adv_pe_options_selector" type="boolean" truevalue="set" falsevalue="do_not_set" label="Set advanced paired end options?" help="Provides additional controls"/>
+      <param name="adv_pe_options_selector" type="select" label="Set advanced paired end options?" help="Provides additional controls">
+        <option value="set">Set</option>
+        <option value="do_not_set" selected="True">Do not set</option>
+      </param>
       <when value="set">
         <param name="a" type="integer" value="500" label="Maximum insert size for a read pair to be considered being mapped properly." help="sampe -a; This option is only used when there are not enough good alignment to infer the distribution of insert sizes; default=500"/>
         <param name="o" type="integer" value="100000" label="Maximum occurrences of a read for pairing. A read with more occurrences will be treated as a single-end read." help="sampe -o; Reducing this parameter helps faster pairing; default=100000"/>
@@ -241,8 +266,11 @@
         <!-- do nothing -->
       </when>
     </xml>
-    <xml name="advances_se_options">
-      <param name="adv_se_options_selector" type="boolean" truevalue="set" falsevalue="do_not_set" label="Set advanced single end options?" help="Provides additional controls"/>
+    <xml name="advanced_se_options">
+      <param name="adv_se_options_selector" type="select" label="Set advanced single end options?" help="Provides additional controls">
+        <option value="set">Set</option>
+        <option value="do_not_set" selected="True">Do not set</option>
+      </param>
       <when value="set">
         <param name="n" type="integer" value="3" label="Maximum number of alignments to output in the XA tag." help="-n; If a read has more than this many hits, the XA tag will not be written; default=3"/>
       </when>
@@ -275,6 +303,7 @@
     <conditional name="input_type">
       <param name="input_type_selector" type="select" label="Select input type" help="Select between fastq and bam datasets and between paired and single end data">
         <option value="paired">Paired fastq</option>
+        <option value="paired_collection">Paired fastq collection</option>
         <option value="single">Single fastq</option>
         <option value="paired_bam">Paired BAM</option>
         <option value="single_bam">Single BAM</option>
@@ -287,12 +316,23 @@
           <expand macro="advanced_pe_options" />
           
         </conditional>
-      </when>     
+      </when>
+      
+      <when value="paired_collection">
+        <param name="fastq_input1" format="fastqsanger" type="data_collection" collection_type="paired" label="Select a paired collection" help="See help section for an explanation of dataset collections"/>
+        <conditional name="adv_pe_options">
+          
+          <expand macro="advanced_pe_options" />
+          
+        </conditional>
+      </when>
+      
+      
       <when value="single">
         <param name="fastq_input1" type="data" format="fastqsanger" label="Select fastq dataset" help="Specify dataset with single reads"/>
         <conditional name="adv_se_options">
           
-          <expand macro="advances_se_options" />
+          <expand macro="advanced_se_options" />
           
         </conditional>
       </when>
@@ -307,11 +347,12 @@
           
         </conditional>
       </when>
+      
       <when value="single_bam">
         <param name="bam_input" type="data" format="bam" label="Select BAM dataset" help="Specify BAM dataset with single reads"/>
         <conditional name="adv_bam_se_options">
           
-          <expand macro="advances_se_options" />
+          <expand macro="advanced_se_options" />
           
         </conditional>
       </when>
@@ -319,7 +360,10 @@
     </conditional>
     
     <conditional name="rg">
-      <param name="rg_selector" type="boolean" truevalue="set" falsevalue="do_not_set" label="Specify readgroup information?" help="Specifying readgroup information can greatly simplify your downstream analyses by allowing combining multiple datasets. See help below for more details"/>
+      <param name="rg_selector" type="select" label="Set readgroups information?" help="Specifying readgroup information can greatly simplify your downstream analyses by allowing combining multiple datasets. See help below for more details">
+        <option value="set">Set</option>
+        <option value="do_not_set" selected="True">Do not set</option>
+      </param>
       <when value="set">
         <param name="ID" type="text" value="readgroup1" size="20" label="Specify readgroup ID" help="This value must be unique among multiple samples in your experiment">
           <sanitizer invalid_char="">
@@ -468,32 +512,12 @@ Each Galaxy parameter widget corresponds to command line flags listed below::
     -n INT    maximum hits to output for paired reads [3]
     -r STR    read group header line [null]
                  
-------
 
-.. class:: warningmark
+@dataset_collections@
 
-**An important note on Read Groups**
+@RG@
 
-One of the recommended best practices in NGS analysis is adding read group information to BAM files. You can do thid directly in BWA interface using the
-**Specify readgroup information?** widget. If you are not familiar with readgroups you shold know that this is effectively a way to tag reads with an additional ID.
-This allows you to combine BAM files from, for example, multiple BWA runs into a single dataset. This significantly simplifies downstream processing as
-instead of dealing with multiple datasets you only have to handle only one. This is possible because the readgroup information allows you to identify
-data from different experiments even if they are combined in one file. Many downstream analysis tools such as varinat callers (e.g., FreeBayes or Naive Varinat Caller
-present in Galaxy) are aware of readgtroups and will automatically generate calls for each individual sample even if they are combined within a single file.
-
------
-
-.. class:: infomark
-
-**More info**
-
-To obtain more information about BWA and ask questions use these resources:
-
-  1. https://biostar.usegalaxy.org/
-  2. https://www.biostars.org/
-  3. https://github.com/lh3/bwa
-  4. http://bio-bwa.sourceforge.net/
-  
+@info@
     
   </help>
   <citations>

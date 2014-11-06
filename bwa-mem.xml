@@ -1,5 +1,10 @@
 <?xml version="1.0"?>
-<tool id="bwa_mem_0_7_10" name="BWA-MEM" version="bwa-0.7.10-r837-dirty_galaxy_0.1">
+<tool id="bwa_mem_0_7_10" name="BWA-MEM" version="bwa-0.7.10-r837-dirty_galaxy_0.2">
+  
+  <macros>
+    <import>bwa_macros.xml</import>
+  </macros>
+  
   <requirements>
     <requirement type="package" version="0.7.10.039ea20639">bwa</requirement>
     <requirement type="package" version="1.1">samtools</requirement>
@@ -56,8 +61,8 @@
     
     #if str( $fastq_input.fastq_input_selector ) == "paired_iv":                              ## For interleaved fastq files set -p option
       -p
-      #if str( $fastq_input.iv_stats.iv_stats_selector ) == "True":                           ## check that insert statistics is used
-        -I "${fastq_input.iv_stats.iset_stats}"
+      #if str( $fastq_input.iset_stats ):                                                     ## check that insert statistics is used
+        -I "${fastq_input.iset_stats}"
       #end if
     #end if
     
@@ -118,16 +123,28 @@
     
     #if str( $fastq_input.fastq_input_selector ) == "paired":
       
-      #if str( $fastq_input.paired_stats.paired_stats_selector ) == "True":                   ## check that insert statistics is used
-        -I "${fastq_input.paired_stats.iset_stats}"
+      #if str( $fastq_input.iset_stats ):                   ## check that insert statistics is used
+        -I "${fastq_input.iset_stats}"
       #end if
       
       "${reference_fasta_filename}"
       
       "${fastq_input.fastq_input1}" "${fastq_input.fastq_input2}"
       
+    #elif str( $fastq_input.fastq_input_selector ) == "paired_collection":
+      
+      #if str( $fastq_input.iset_stats ):                   ## check that insert statistics is used
+        -I "${fastq_input.iset_stats}"
+      #end if
+
+      
+      "${reference_fasta_filename}"
+      
+      "${fastq_input.fastq_input1.forward}" "${fastq_input.fastq_input1.reverse}"
+      
     #else:
-    
+      
+      
       "${reference_fasta_filename}"
     
       "${fastq_input.fastq_input1}"
@@ -164,64 +181,45 @@
       <param name="fastq_input_selector" type="select" label="Single or Paired-end reads" help="Select between paired and single end data">
         <option value="paired">Paired</option>
         <option value="single">Single</option>
+        <option value="paired_collection">Paired Collection</option>
         <option value="paired_iv">Paired Interleaved</option>
       </param>
       <when value="paired">
         <param name="fastq_input1" type="data" format="fastqsanger" label="Select first set of reads" help="Specify dataset with forward reads"/>
         <param name="fastq_input2" type="data" format="fastqsanger" label="Select second set of reads" help="Specify dataset with reverse reads"/>
-        
-        <!-- PE stat selection block 1: If you make any changes in this conditional block, copy them to PE stat selection block 2 below as well -->
-        
-        <conditional name="paired_stats">
-          <param name="paired_stats_selector" type="boolean" truevalue="set" falsevalue="do_not_set" label="Specify insert size statistics?" help="-I; if you choose to not specify, it will be inferred from the data"/>
-          <when value="set">
-            
-            <param name="iset_stats" type="text" value="250" size="10" label="Enter mean, standerd deviation, max, and min for insert lengths in the form mean,sd,min,max" help="-I; only mean is required while sd, max, and min will be inferred. Examples: both &quot;250&quot; and &quot;250,25&quot; will work while &quot;250,,10&quot; will not. See below for details.">
-              <sanitizer invalid_char="">
-                <valid initial="string.digits"><add value=","/> </valid>
-              </sanitizer>
-            </param>
-            
-          </when>
-          <when value="do_not_set">
-          <!-- do nothing -->
-          </when>
-        </conditional>
-        
-        <!-- end of PE stat selection block 1 -->
-        
+        <param name="iset_stats" type="text" optional="True" size="10" label="Enter mean, standerd deviation, max, and min for insert lengths." help="-I; This parameter is only used for paired reads. Only mean is required while sd, max, and min will be inferred. Examples: both &quot;250&quot; and &quot;250,25&quot; will work while &quot;250,,10&quot; will not. See below for details.">
+          <sanitizer invalid_char="">
+            <valid initial="string.digits"><add value=","/> </valid>
+          </sanitizer>
+        </param>
       </when>     
       <when value="single">
         <param name="fastq_input1" type="data" format="fastqsanger" label="Select fastq dataset" help="Specify dataset with single reads"/>
       </when>
+      <when value="paired_collection">
+        <param name="fastq_input1" format="fastqsanger" type="data_collection" collection_type="paired" label="Select a paired collection" help="See help section for an explanation of dataset collections"/>
+        <param name="iset_stats" type="text" optional="True" size="10" label="Enter mean, standerd deviation, max, and min for insert lengths." help="-I; This parameter is only used for paired reads. Only mean is required while sd, max, and min will be inferred. Examples: both &quot;250&quot; and &quot;250,25&quot; will work while &quot;250,,10&quot; will not. See below for details.">
+          <sanitizer invalid_char="">
+            <valid initial="string.digits"><add value=","/> </valid>
+          </sanitizer>
+        </param>
+      </when>
       <when value="paired_iv">
-        <param name="fastq_input1" type="data" format="fastqsanger" label="Select fastq dataset" help="Specify dataset with interleaved reads"/>
-        
-        <!-- PE stat selection block 2: If you make any changes in this conditional block, copy them to PE stat selection block 1 above as well -->
-        
-        <conditional name="iv_stats">
-          <param name="iv_stats_selector" type="boolean" truevalue="set" falsevalue="do_not_set" label="Specify insert size statistics?" help="-I; if you choose to not specify, it will be inferred from the data"/>
-          <when value="set">
-            
-            <param name="iset_stats" type="text" value="250" size="10" label="Enter mean, standerd deviation, max, and min for insert lengths in the form mean,sd,min,max" help="-I; only mean is required while sd, max, and min will be inferred. Examples: both &quot;250&quot; and &quot;250,25&quot; will work while &quot;250,,10&quot; will not. See below for details.">
-              <sanitizer invalid_char="">
-                <valid initial="string.digits"><add value=","/> </valid>
-              </sanitizer>
-            </param>
-          
-          </when>
-          <when value="do_not_set">
-          <!-- do nothing -->
-          </when>
-        </conditional>
-        
-        <!-- end of PE stat selection block 2 -->
-        
+        <param name="fastq_input1" type="data" format="fastqsanger" label="Select fastq dataset" help="Specify dataset with interleaved reads"/>    
+        <param name="iset_stats" type="text" optional="True" size="10" label="Enter mean, standerd deviation, max, and min for insert lengths." help="-I; This parameter is only used for paired reads. Only mean is required while sd, max, and min will be inferred. Examples: both &quot;250&quot; and &quot;250,25&quot; will work while &quot;250,,10&quot; will not. See below for details.">
+          <sanitizer invalid_char="">
+            <valid initial="string.digits"><add value=","/> </valid>
+          </sanitizer>
+        </param>    
       </when>
     </conditional>
+  
     
     <conditional name="rg">
-      <param name="rg_selector" type="boolean" truevalue="set" falsevalue="do_not_set" label="Specify readgroup information?" help="Specifying readgroup information can greatly simplify your downstream analyses by allowing combining multiple datasets. See help below for more details"/>
+      <param name="rg_selector" type="select" label="Set read groups information?" help="Specifying readgroup information can greatly simplify your downstream analyses by allowing combining multiple datasets. See help below for more details">
+        <option value="set">Set</option>
+        <option value="do_not_set" selected="True">Do not set</option>
+      </param>
       <when value="set">
         <param name="ID" type="text" value="readgroup1" size="20" label="Specify readgroup ID" help="This value must be unique among multiple samples in your experiment">
           <sanitizer invalid_char="">
@@ -254,7 +252,10 @@
       </when>
       <when value="full">
         <conditional name="algorithmic_options">
-          <param name="algorithmic_options_selector" type="boolean" truevalue="set" falsevalue="do_not_set" label="Set algorithmic options?" help="Sets -k, -w, -d, -r, -y, -c, -D, -W, -m, -S, -P, and -e options." />
+          <param name="algorithmic_options_selector" type="select" label="Set algorithmic options?" help="Sets -k, -w, -d, -r, -y, -c, -D, -W, -m, -S, -P, and -e options.">
+            <option value="set">Set</option>
+            <option value="do_not_set" selected="True">Do not set</option>
+          </param>
           <when value="set">
             <param name="k" type="integer" value="19" label="minimum seed length" help="-k; default=19"/>
             <param name="w" type="integer" value="100" label="band width for banded alignment" help="-w; default=100"/>
@@ -273,8 +274,12 @@
             <!-- do nothing -->
           </when>
         </conditional>
+        
         <conditional name="scoring_options">
-          <param name="scoring_options_selector" type="boolean" truevalue="set" falsevalue="do_not_set" label="Set scoring options?" help="Sets -A, -B, -O, -E, -L, and -U options." />
+          <param name="scoring_options_selector" type="select" label="Set scoring options?" help="Sets -A, -B, -O, -E, -L, and -U options.">
+            <option value="set">Set</option>
+            <option value="do_not_set" selected="True">Do not set</option>
+          </param>
           <when value="set">
             <param name="A" type="integer" value="1" label="score for a sequence match" help="-A; scales options -T, -d, -B, -O, -E, -L, and -U; default=1"/>
             <param name="B" type="integer" value="4" label="penalty for mismatch" help="-B; default=4"/>
@@ -299,8 +304,12 @@
             <!-- do nothing -->
           </when>
         </conditional>
+        
         <conditional name="io_options">
-          <param name="io_options_selector" type="boolean" truevalue="set" falsevalue="do_not_set" label="Set input/output options" help="Sets -T, -h, -a, -C, -V, -Y, and -M options." />
+          <param name="io_options_selector" type="select" label="Set input/output options" help="Sets -T, -h, -a, -C, -V, -Y, and -M options.">
+            <option value="set">Set</option>
+            <option value="do_not_set" selected="True">Do not set</option>
+          </param>
           <when value="set">
             <param name="T" type="integer" value="30" label="minimum score to output" help="-T; default=30"/>
             <param name="h" type="integer" value="5" label="if there are this many hits with score >80% of the max score, output all in XA tag" help="-h; default=5"/>
@@ -420,31 +429,13 @@ Input/output options::
                      (4 sigma from the mean if absent) and min of the insert size distribution.
                      FR orientation only. [inferred]
                      
-------
 
-.. class:: warningmark
+@dataset_collections@
 
-**An important note on Read Groups**
+@RG@
 
-One of the recommended best practices in NGS analysis is adding read group information to BAM files. You can do thid directly in BWA MEM interface using the
-**Specify readgroup information?** widget. If you are not familiar with readgroups you shold know that this is effectively a way to tag reads with an additional ID.
-This allows you to combine BAM files from, for example, multiple BWA MEM runs into a single dataset. This significantly simplifies downstream processing as
-instead of dealing with multiple datasets you only have to handle only one. This is possible because the readgroup information allows you to identify
-data from different experiments even if they are combined in one file. Many downstream analysis tools such as varinat callers (e.g., FreeBayes or Naive Varinat Caller
-present in Galaxy) are aware of readgtroups and will automatically generate calls for each individual sample even if they are combined within a single file.
+@info@
 
------
-
-.. class:: infomark
-
-**More info**
-
-To obtain more information about BWA MEM and ask questions use these resources:
-
-  1. https://biostar.usegalaxy.org/
-  2. https://www.biostars.org/
-  3. https://github.com/lh3/bwa
-  4. http://bio-bwa.sourceforge.net/
   
     
   </help>
