@@ -5,7 +5,7 @@
     <requirement type="package" version="0.7.10.039ea20639">bwa</requirement>
     <requirement type="package" version="1.1">samtools</requirement>
   </requirements>
-  <description>- map short reads (&lt; 100 bp) against referece genome</description>
+  <description>- map short reads (&lt; 100 bp) against reference genome</description>
   <command>
  
     #set $reference_fasta_filename = "localref.fa"
@@ -236,9 +236,6 @@
       #if str( $analysis_type.L ):
         -B ${analysis_type.L}
       #end if
-      
-    #elif str( $analysis_type.analysis_type_selector ) == "cline":
-      ${analysis_type.cline}
     #end if    
     </token>
     <token name="@read_group_options@">
@@ -385,7 +382,6 @@
       <param name="analysis_type_selector" type="select" label="Select analysis mode">
         <option value="illumina">1.Simple Illumina mode</option>
         <option value="full">2.Full list of options</option>
-        <option value="cline">3.Input parameters on the command line</option>
       </param>
       <when value="illumina">
         <!-- do nothing -->
@@ -406,16 +402,6 @@
         <param name="q" type="integer" value="0" label="quality threshold for read trimming down to 35bp" help="aln -q; default=0"/>
         <param name="B" type="integer" optional="True" label="length of barcode" help="aln -B; optional parameter"/>
         <param name="L" type="float" optional="True" label="log-scaled gap penalty for long deletions" help="aln -L; optional parameter"/>   
-      </when>
-         
-      <when value="cline">
-        <param name="cline" size="60" type="text" value="-n 0.04 -R 10" label="Type command line options here" help="All paremeters that DO NOT involve filenames can be typed here.">
-          <sanitizer>
-            <valid initial="string.printable">
-              <remove value="&apos;"/>
-            </valid>
-          </sanitizer>
-        </param>
       </when>
     </conditional>
   </inputs>
